@@ -1,0 +1,8 @@
+[package]
+name = "Intuitionism"
+version = "0.1"
+lean_version = "leanprover-community/lean:3.6.1"
+path = "src"
+
+[dependencies]
+mathlib = {git = "https://github.com/leanprover-community/mathlib", rev = "496939ce06befc6bae3cb8d5519c2424c9bf2fb1"}
