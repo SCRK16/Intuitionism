@@ -4,7 +4,6 @@ Meaning: A statement that cannot be proven, and whose negation also cannot be pr
 
 The most important example of recklessness is the law of exluded middle: ∀ P : Prop, P ∨ ¬ P,  
 also called "the principle of omniscience"
-
 -/
 
 import ..Intuitionism.nat_seq
@@ -36,7 +35,7 @@ This is the example Brouwer initially used to justify the idea of statements bei
 though it is slightly weaker than PO  
 Using the relations = and #, we could also have defined LPO as:  
 ∀ a : 𝒩, a = nat_seq.zero ∨ a # nat_seq.zero  
-Note: for such a it could still be the case that we can prove a ≠ nat_seq.zero  
+Note: for such a : 𝒩 it could still be the case that we can prove a ≠ nat_seq.zero  
 This is because (∃ n : ℕ, a n ≠ 0) is stronger than (¬ ∀ n : ℕ, a = 0)
 -/
 def LPO : Prop := ∀ a : 𝒩, (∀ n : ℕ, a n = 0) ∨ (∃ n : ℕ, a n ≠ 0)
@@ -351,31 +350,6 @@ begin
     }
 end
 
--- Similar to (¬ ∀) → (∃ ¬)
-theorem reckless_LPO_ne_implies_apart :
-    reckless_LPO (∀ a b: 𝒩, nat_seq.ne a b → a # b) :=
-begin
-    intros h a,
-    have h₁ : ∀ n : ℕ, a n = 0 ∨ a n ≠ 0, by
-    {-- need to prove: ∀ n : ℕ, a n = 0 ∨ a n ≠ 0
-        intro n,
-        have tri := nat.lt_trichotomy (a n) 0,
-        rwa [or.comm, or.assoc, ← ne_iff_lt_or_gt] at tri,
-        cases tri with aneq anne,
-        {-- case: a n = 0
-            left,
-            exact aneq,
-        },
-        {-- case: an ≠ 0
-            right,
-            symmetry,
-            exact anne,
-        },
-    },
-    
-    sorry,
-end
-
 -- It is okay to assume PO when deriving a negative conclusion
 theorem PO_implies_not_implies_not : (P ∨ ¬P → ¬Q) → ¬Q :=
 begin
@@ -396,14 +370,3 @@ begin
 end
 
 end reckless
-
-/-
-TODO:
-Rewrite all code to use @[refl], @[trans], @[symm], etc.
--/
-
-/-
-TODO: Important reckless statements
-∀ R : α → Prop, ¬ ∀ x : α, R x → ∃ x : ¬ R x
-Perhaps some things with ¬ and ∨
--/

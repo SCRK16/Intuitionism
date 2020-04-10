@@ -1,3 +1,9 @@
+/-
+This file defines rational segments 𝕊,
+here defined as a subtype of ℚ × ℚ
+Also defines relations on 𝕊, like ≤, ⊑ and ≈
+-/
+
 import data.rat
 import algebra.order
 

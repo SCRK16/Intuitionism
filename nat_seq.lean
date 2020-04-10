@@ -1,5 +1,5 @@
 /-
-This file captures the notion of natural sequences, here defined as functions ℕ → ℕ
+This file defines natural sequences, here defined as functions ℕ → ℕ
 Also defined here are the comparisons =, ≠, <, ≤ and #
 -/
 

@@ -1,3 +1,8 @@
+/-
+This file defines the constructive real numbers ℛ,
+defined by sequences of shrinking and dwindling rational segments
+-/
+
 import ..Intuitionism.segment
 
 /--
@@ -68,7 +73,9 @@ TODO:
 2) Define 0 using λ n, (0, 0)
 3) Show that 0 in (2) and the embedding of 0 in (1) are equal
 4) Theorems in 3.4 of int2
+
+Create other files for:
 5) Intermediate Value Theorem and its constructive counterparts
 6) Completeness of (ℛ, ≤)
-7) Every real function is continuous
+7) Every real function is continuous (Needs Fan Theorem)
 -/
