@@ -171,6 +171,134 @@ begin
     }
 end
 
+theorem apart_cotrans (x y z : ℛ) (h : x # y) : x # z ∨ z # y :=
+begin
+    cases h with h₁ h₂,
+    {-- case: x < y
+        cases lt_cotrans x y z h₁ with hz hz,
+        {-- case: x < z
+            left,
+            left,
+            exact hz,
+        },
+        {-- case: z < y
+            right,
+            left,
+            exact hz,
+        }
+    },
+    {-- case: case y < x
+        cases lt_cotrans y x z h₂ with hz hz,
+        {-- case: y < z
+            right,
+            right,
+            exact hz,
+        },
+        {-- case: z < x
+            left,
+            right,
+            exact hz,
+        }
+    }
+end
+
+theorem le_iff_not_lt (x y : ℛ) : x ≤ y ↔ ¬ y < x :=
+begin
+    split,
+    {-- need to prove: x ≤ y → ¬ y < x
+        intros h₁ h₂,
+        cases h₂ with n hn,
+        have hn₁ := h₁ n,
+        rw segment.le_iff_not_lt at hn₁,
+        exact hn₁ hn,
+    },
+    {-- need to prove: ¬ y < x → x ≤ y
+        intros h n,
+        rw segment.le_iff_not_lt,
+        revert n,
+        exact forall_not_of_not_exists h,
+    }
+end
+
+@[trans] theorem le_trans (x y z : ℛ) (h₁ : x ≤ y) (h₂ : y ≤ z) : x ≤ z :=
+begin
+    rw le_iff_not_lt at *,
+    intro zltx,
+    cases lt_cotrans z x y zltx with hz hz,
+    {-- case: z < y
+        exact h₂ hz,
+    },
+    {-- case: y < x
+        exact h₁ hz,
+    }
+end
+
+@[refl] theorem le_refl (x : ℛ) : x ≤ x :=
+begin
+    intro n,
+    refl,
+end
+
+theorem eq_iff_not_apart (x y : ℛ) : x =' y ↔ ¬ x # y :=
+begin
+    split,
+    {-- need to prove: x = y → ¬ x # y
+        intros h₁ h₂,
+        cases h₂ with xlty yltx,
+        {-- case: x < y
+            cases xlty with n hn,
+            have hn₁ := h₁ n,
+            rw segment.lt_iff_not_le at hn,
+            exact hn hn₁.elim_right,
+        },
+        {-- case: y < x
+            cases yltx with n hn,
+            have hn₁ := h₁ n,
+            rw segment.lt_iff_not_le at hn,
+            exact hn hn₁.elim_left,
+        }
+    },
+    {-- need to prove: ¬ x # y → x = y
+        intros h n,
+        rw apart at h,
+        rw segment.touches,
+        rw not_or_distrib at h,
+        split,
+        {-- need to prove: seq x n ≤ seq y n
+            rw segment.le_iff_not_lt,
+            have h₁ := forall_not_of_not_exists h.elim_right n,
+            exact h₁,
+        },
+        {-- need to prove: seq y n ≤ seq x n
+            rw segment.le_iff_not_lt,
+            have h₂ := forall_not_of_not_exists h.elim_left n,
+            exact h₂,
+        }
+    }
+end
+
+@[trans] theorem eq_trans (x y z: ℛ) (h₁ : x =' y) (h₂ : y =' z) : x =' z :=
+begin
+    rw eq_iff_not_apart,
+    intro h₃,
+    have h₄ := apart_cotrans x z y h₃,
+    cases h₄ with xay yaz,
+    {-- case: x # y
+        rw eq_iff_not_apart at h₁,
+        exact h₁ xay,
+    },
+    {-- case: y # z
+        rw eq_iff_not_apart at h₂,
+        exact h₂ yaz,
+    }
+end
+
+@[refl] theorem eq_refl (x : ℛ) : x =' x :=
+begin
+    intro n,
+    refl,
+end
+
 end real_seq
 
 

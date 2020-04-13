@@ -105,11 +105,23 @@ begin
     exact h₂,
 end
 
+@[refl] theorem le_refl (s : 𝕊) : s ≤ s :=
+begin
+    exact (subtype.property s),
+end
+
 /--
 We say that two rational segments 'touch' if they partially cover eachother
 -/
 def touches (s t: 𝕊) : Prop := s ≤ t ∧ t ≤ s
 
 infix `≈` := touches
+
+@[refl] theorem touches_refl (x : 𝕊) : x ≈ x :=
+begin
+    split,
+    refl,
+    refl,
+end
 
 end segment
