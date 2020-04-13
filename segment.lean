@@ -19,23 +19,13 @@ notation `𝕊` := segment
 
 namespace segment
 
-def fst : 𝕊 → ℚ :=
-begin
-    intro s,
-    cases s with t ht,
-    exact t.fst,
-end
+def fst (s : 𝕊) : ℚ := (subtype.val s).fst
 
-def snd : 𝕊 → ℚ :=
-begin
-    intro s,
-    cases s with t ht,
-    exact t.snd,
-end
+def snd (s : 𝕊) : ℚ := (subtype.val s).snd
 
 def proper (s : 𝕊) : Prop := s.fst < s.snd
 
-def contained (s t : 𝕊) : Prop := s.fst ≤ t.fst ∧ s.snd ≤ t.snd
+def contained (s t : 𝕊) : Prop := t.fst ≤ s.fst ∧ s.snd ≤ t.snd
 
 infix `⊑`:50 := contained
 
@@ -50,6 +40,28 @@ infix `<` := lt
 def le (s t : 𝕊) : Prop := s.fst ≤ t.snd
 
 infix `≤` := le
+
+@[trans] theorem contained_trans (s t v: 𝕊) (h₁ : s ⊑ t) (h₂ : t ⊑ v) : s ⊑ v :=
+begin
+    split,
+    {-- need to prove: fst v ≤ fst s
+        transitivity t.fst,
+        exact h₂.elim_left,
+        exact h₁.elim_left,
+    },
+    {-- need to prove: snd s ≤ snd v
+        transitivity t.snd,
+        exact h₁.elim_right,
+        exact h₂.elim_right,
+    }
+end
+
+@[refl] theorem contained_refl (s : 𝕊) : s ⊑ s :=
+begin
+    split,
+    refl,
+    refl,
+end
 
 -- This lemma immediately follows from a similar statement about ℚ
 lemma le_iff_not_lt (s t : 𝕊) : s ≤ t ↔ ¬ t < s :=
@@ -81,6 +93,16 @@ begin
         rw ge_iff_le,
         exact h,
     }
+end
+
+@[trans] theorem lt_trans (s t v : 𝕊) (h₁ : s < t) (h₂ : t < v) : s < v :=
+begin
+    have ht := subtype.property t,
+    have h₃ : s.snd < t.snd := lt_of_lt_of_le h₁ ht,
+    rw segment.lt,
+    transitivity t.snd,
+    exact h₃,
+    exact h₂,
 end
 
 /--
