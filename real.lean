@@ -299,6 +299,18 @@ begin
     refl,
 end
 
+theorem le_stable (x y : ℛ) : ¬¬x ≤ y →  x ≤ y :=
+begin
+    rw le_iff_not_lt,
+    exact not_of_not_not_not,
+end
+
+theorem eq_stable (x y : ℛ) : ¬¬x =' y → x =' y :=
+begin
+    rw eq_iff_not_apart,
+    exact not_of_not_not_not,
+end
+
 end real_seq
 
 

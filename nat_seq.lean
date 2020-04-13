@@ -381,61 +381,10 @@ begin
     exact h₁ ba,
 end
 
-theorem eq_stable (a b : 𝒩) : ¬¬ a =' b → a =' b :=
+theorem le_stable (a b : 𝒩) : ¬¬a ≤ b → a ≤ b :=
 begin
-    intro notnot,
-    intro n,
-    have h := lt_trichotomy (a n) (b n),
-    cases h with h₁ r,
-    {-- case: a n < b n
-        exfalso,
-        apply notnot,
-        apply not_forall_of_exists_not,
-        use n,
-        rw ← ne_from_not_eq,
-        rw ne_iff_lt_or_gt,
-        left,
-        exact h₁,
-    },
-    {
-        cases r with h₂ h₃,
-        {-- case a n = b n
-            exact h₂,
-        },
-        {-- case b n < a n
-            exfalso,
-            apply notnot,
-            apply not_forall_of_exists_not,
-            use n,
-            rw ← ne_from_not_eq,
-            rw ne_iff_lt_or_gt,
-            right,
-            exact h₃,
-        }
-    }
-end
-
-theorem le_stable (a b : 𝒩) : ¬¬ a ≤ b → a ≤ b :=
-begin
-    intro notnot,
-    intro n,
-    intro hn,
-    have h := le_or_gt (a n) (b n),
-    cases h with h₁ h₂,
-    {-- case: a n ≤ b n
-        exact h₁,
-    },
-    {-- case a n > b n
-        exfalso,
-        apply notnot,
-        apply not_forall_of_exists_not,
-        use n,
-        intro r,
-        rw gt_iff_lt at h₂,
-        rw lt_iff_le_not_le at h₂,
-        cases h₂ with h₃ h₄,
-        exact h₄ (r hn),
-    }
+    rw le_iff_not_lt,
+    exact not_of_not_not_not,
 end
 
 def apart (a b : 𝒩) : Prop := ∃ n, a n ≠ b n
@@ -482,6 +431,12 @@ begin
             exact (and.elim_right g) rr,
         }
     }
+end
+
+theorem eq_stable (a b : 𝒩) : ¬¬ a =' b → a =' b :=
+begin
+    rw eq_iff_not_apart,
+    exact not_of_not_not_not,
 end
 
 theorem apart_iff_lt_or_lt (a b : 𝒩) : a # b ↔ a < b ∨ b < a :=
