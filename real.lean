@@ -311,6 +311,135 @@ begin
     exact not_of_not_not_not,
 end
 
+/--
+The inclusion from ℚ into ℛ
+-/
+def inclusion_const (q : ℚ) : ℛ :=
+    subtype.mk (λ _ , segment.inclusion q)
+    begin
+        split,
+        {-- need to prove: the defined real_seq is shrinking
+            intro n,
+            refl,
+        },
+        {-- need to prove: the defined real_seq is dwindling
+            intros e he,
+            use 0,
+            rw gt_iff_lt at he,
+            apply lt_of_le_of_lt _ he,
+            apply le_of_eq,
+            rw sub_eq_zero,
+            refl,
+        }
+    end
+
+@[instance] def has_zero : has_zero ℛ := { zero := inclusion_const 0 }
+
+/--
+The definition of + on real sequences
+-/
+@[reducible] def add (x y : ℛ) : ℛ := subtype.mk (λ n, segment.add (x.seq n) (y.seq n))
+    begin
+        have hx := subtype.property x,
+        have hy := subtype.property y,
+        split,
+        {-- need to prove: shrinking
+            intro n,
+            split,
+            {
+                apply add_le_add,
+                    exact (hx.elim_left n).elim_left,
+                    exact (hy.elim_left n).elim_left,
+            },
+            {
+                apply add_le_add,
+                    exact (hx.elim_left n).elim_right,
+                    exact (hy.elim_left n).elim_right,
+            }
+        },
+        {-- need to prove: dwindling
+            intros q hq,
+            have hq2 : q / 2 > 0, by
+            {
+                rw gt_iff_lt,
+                apply div_pos,
+                exact gt_iff_lt.elim_left hq,
+                exact zero_lt_two,
+            },
+            cases hx.elim_right (q / 2) hq2 with xn hxn,
+            cases hy.elim_right (q / 2) hq2 with yn hyn,
+            use max xn yn,
+            simp,
+            rw segment.add,
+            rw segment.snd,
+            simp,
+            rw segment.fst,
+            simp,
+            rw add_sub_comm,
+            have hqa : (q / 2) + (q / 2) = q, by
+            {
+                rw ← mul_two,
+                rw div_mul_cancel,
+                exact two_ne_zero,
+            },
+            rw ← hqa,
+            apply add_lt_add,
+            {-- need to prove: snd (x.seq (max xn yn)) - fst (x.seq (max xn yn)) < q / 2
+                have hm : segment.snd (seq x (max xn yn)) - segment.fst (seq x (max xn yn)) ≤ (segment.snd (x.val xn) - segment.fst (x.val xn)), by
+                {-- need to prove: snd - fst of x.seq (max xn yn) < snd - fst of x.seq xn
+                    apply segment.contained_bounds_le,
+                    apply contained_of_le,
+                    exact le_max_left xn yn,
+                },
+                apply lt_of_le_of_lt hm,
+                exact hxn,
+            },
+            {
+                have hm : segment.snd (seq y (max xn yn)) - segment.fst (seq y (max xn yn)) ≤ (segment.snd (y.val yn) - segment.fst (y.val yn)), by
+                {-- need to prove: snd - fst of x.seq (max xn yn) < snd - fst of x.seq xn
+                    apply segment.contained_bounds_le,
+                    apply contained_of_le,
+                    exact le_max_right xn yn,
+                },
+                apply lt_of_le_of_lt hm,
+                exact hyn,
+            }
+        }
+    end
+
+theorem add_assoc (x y z : ℛ) : add (add x y) z =' add x (add y z) :=
+begin
+    intro n,
+    split,
+    {-- need to prove: add (add x y) z ≤ add x (add y z)
+        repeat {
+            repeat {rw seq, rw add},
+            simp,
+        },
+        rw segment.add_assoc,
+        refl,
+    },
+    {-- need to prove: add x (add y z) ≤ add (add x y) z
+        repeat {
+            repeat {rw seq, rw add},
+            simp,
+        },
+        rw ← segment.add_assoc,
+        refl,
+    }
+end
+
+theorem add_comm (x y : ℛ) : add x y =' add y x :=
+begin
+    intro n,
+    split,
+    repeat {
+        rwa [seq, seq, add, add],
+        simp,
+        rw segment.add_comm,
+    },
+end
+
 end real_seq
 
 
@@ -319,7 +448,6 @@ TODO:
 1) Define inclusion from rationals intro reals using: ℚ → ℕ → 𝕊 := λ q, λ n, (q - 1 / 2^n, q + 1 / 2^n)
 2) Define 0 using λ n, (0, 0)
 3) Show that 0 in (2) and the embedding of 0 in (1) are equal
-4) Theorems in 3.4 of int2
 
 Create other files for:
 5) Intermediate Value Theorem and its constructive counterparts

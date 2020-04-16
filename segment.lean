@@ -41,6 +41,14 @@ def le (s t : 𝕊) : Prop := s.fst ≤ t.snd
 
 infix `≤` := le
 
+def inclusion (q : ℚ) : 𝕊 :=
+    subtype.mk (q, q)
+    begin
+        refl,
+    end
+
+@[instance] def has_zero : has_zero 𝕊 := { zero := inclusion 0 }
+
 @[trans] theorem contained_trans (s t v: 𝕊) (h₁ : s ⊑ t) (h₂ : t ⊑ v) : s ⊑ v :=
 begin
     split,
@@ -117,11 +125,65 @@ def touches (s t: 𝕊) : Prop := s ≤ t ∧ t ≤ s
 
 infix `≈` := touches
 
-@[refl] theorem touches_refl (x : 𝕊) : x ≈ x :=
+@[refl] theorem touches_refl (s : 𝕊) : s ≈ s :=
 begin
     split,
     refl,
     refl,
 end
+
+def add (s t : 𝕊) : 𝕊 := subtype.mk (s.fst + t.fst, s.snd + t.snd)
+    begin
+        apply add_le_add,
+        exact subtype.property s,
+        exact subtype.property t,
+    end
+
+theorem add_assoc (s t v : 𝕊) : add (add s t) v = add s (add t v) :=
+begin
+    repeat {rw add},
+    rw subtype.mk_eq_mk,
+    rw prod.mk.inj_iff,
+    split,
+    {
+        repeat {rw fst},
+        rw add_assoc,
+        rw add_left_inj,
+        refl,
+    },
+    {
+        repeat {rw snd},
+        rw add_assoc,
+        rw add_left_inj,
+        refl,
+    }
+end
+
+theorem add_comm (s t : 𝕊) : add s t = add t s :=
+begin
+    rw add,
+    rw add,
+    apply subtype.eq,
+    simp,
+    split,
+        exact rat.add_comm (fst s) (fst t),
+        exact rat.add_comm (snd s) (snd t),
+end
+
+-- We use this lemma in proving that addition on ℛ is well-defined
+lemma contained_bounds_le (s t : 𝕊) (h : s ⊑ t) : s.snd - s.fst ≤ t.snd - t.fst :=
+begin
+    rw contained at h,
+    apply sub_le_sub,
+    exact h.elim_right,
+    exact h.elim_left,
+end
+
+instance : add_comm_semigroup 𝕊 :=
+{
+    add := segment.add, 
+    add_assoc := segment.add_assoc,
+    add_comm := segment.add_comm,
+}
 
 end segment
