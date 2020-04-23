@@ -64,6 +64,21 @@ begin
     }
 end
 
+@[trans] theorem proper_contained_trans (s t v : 𝕊) (h₁ : s ⊏ t) (h₂ : t ⊏ v) : s ⊏ v :=
+begin
+    split,
+    {-- need to prove: fst v < fst s
+        transitivity t.fst,
+        exact h₂.elim_left,
+        exact h₁.elim_left,
+    },
+    {-- need to prove: snd s < snd v
+        transitivity t.snd,
+        exact h₁.elim_right,
+        exact h₂.elim_right,
+    }
+end
+
 @[refl] theorem contained_refl (s : 𝕊) : s ⊑ s :=
 begin
     split,
@@ -159,6 +174,10 @@ begin
     }
 end
 
+lemma fst_add_comm {s t : 𝕊} : fst (add s t) = fst s + fst t := rfl
+
+lemma snd_add_comm {s t : 𝕊} : snd (add s t) = snd s + snd t := rfl
+
 theorem add_comm (s t : 𝕊) : add s t = add t s :=
 begin
     rw add,
@@ -185,5 +204,11 @@ instance : add_comm_semigroup 𝕊 :=
     add_assoc := segment.add_assoc,
     add_comm := segment.add_comm,
 }
+
+def neg (s : 𝕊) : 𝕊 := subtype.mk (-s.snd, -s.fst)
+    begin
+        simp,
+        exact subtype.property s,
+    end
 
 end segment

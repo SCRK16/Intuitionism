@@ -335,10 +335,12 @@ def inclusion_const (q : ℚ) : ℛ :=
 
 @[instance] def has_zero : has_zero ℛ := { zero := inclusion_const 0 }
 
+lemma zero : 0 = inclusion_const 0 := rfl
+
 /--
 The definition of + on real sequences
 -/
-@[reducible] def add (x y : ℛ) : ℛ := subtype.mk (λ n, segment.add (x.seq n) (y.seq n))
+def add (x y : ℛ) : ℛ := subtype.mk (λ n, segment.add (x.seq n) (y.seq n))
     begin
         have hx := subtype.property x,
         have hy := subtype.property y,
@@ -407,7 +409,7 @@ The definition of + on real sequences
         }
     end
 
-theorem add_assoc (x y z : ℛ) : add (add x y) z =' add x (add y z) :=
+theorem add_assoc {x y z : ℛ} : add (add x y) z =' add x (add y z) :=
 begin
     intro n,
     split,
@@ -429,7 +431,7 @@ begin
     }
 end
 
-theorem add_comm (x y : ℛ) : add x y =' add y x :=
+theorem add_comm {x y : ℛ} : add x y =' add y x :=
 begin
     intro n,
     split,
@@ -440,15 +442,127 @@ begin
     },
 end
 
+theorem add_zero {x : ℛ} : add x 0 =' x :=
+begin
+    rw zero,
+    rw add,
+    rw inclusion_const,
+    rw eq,
+    intro n,
+    simp [seq, segment.add, segment.fst, segment.snd, segment.inclusion, segment.touches],
+end
+
+theorem zero_add {x : ℛ} : add 0 x =' x :=
+begin
+    transitivity (add x 0),
+    exact add_comm,
+    exact add_zero,
+end
+
+theorem eq_implies_add_eq_add {x y z : ℛ} : y =' z → add x y =' add x z :=
+begin
+    repeat {rw eq},
+    intros h n,
+    have hn := h n,
+    rw segment.touches at *,
+    split,
+    {-- need to prove: seq (add x y) n≤seq (add x z) n
+        simp [seq, add, segment.le, segment.fst, segment.snd, segment.add],
+        apply add_le_add,
+        exact subtype.property (x.val n),
+        exact hn.elim_left,
+    },
+    {
+        simp [seq, add, segment.le, segment.fst, segment.snd, segment.add],
+        apply add_le_add,
+        exact subtype.property (x.val n),
+        exact hn.elim_right,
+    }
+end
+
+def neg (x : ℛ) : ℛ := subtype.mk (λ n, (x.val n).neg)
+    begin
+    	split,
+        {-- shrinking
+            intro n,
+            split,
+            { -- use: segment.snd (x.val (n + 1)) ≤ segment.snd (x.val n)
+                simp [segment.fst, segment.fst, segment.neg, segment.neg, neg_le_neg_iff],
+                exact ((subtype.property x).elim_left n).elim_right,
+            },
+            {--  use: segment.fst (x.val n) ≤ segment.fst (x.val (n + 1))
+                simp [segment.snd, segment.snd, segment.neg, segment.neg, neg_le_neg_iff],
+                exact ((subtype.property x).elim_left n).elim_left,
+            }
+        },
+        {-- dwindling
+            intros q hq,
+            have hx := (subtype.property x).elim_right q hq,
+            cases hx with xn hxn,
+            use xn,
+            have h : 
+                segment.snd ((λ (n : ℕ), segment.neg (x.val n)) xn) - segment.fst ((λ (n : ℕ), segment.neg (x.val n)) xn) 
+                    = 
+                segment.snd (x.val xn) - segment.fst (x.val xn),
+            by simp [segment.snd, segment.fst, segment.neg],
+            rw h,
+            exact hxn,
+        }
+    end
+
+def sub (x y : ℛ) : ℛ := add x (neg y)
+
+theorem sub_self_eq_zero (x : ℛ) : sub x x =' 0 :=
+begin
+    rwa [zero, eq, inclusion_const],
+    intro n,
+    simp [sub, add, neg, seq, segment.add, segment.neg, segment.fst, segment.snd, segment.touches, segment.inclusion],
+    split,
+    {-- sub x x ≤ 0
+        simp [segment.le, segment.snd, segment.fst],
+        exact (subtype.property (x.seq n)), --use: (x.seq n) is a segment
+    },
+    {-- 0 ≤ sub x x
+        simp [segment.le, segment.snd, segment.fst],
+        rwa [← sub_eq_add_neg, le_sub, sub_zero],
+        exact (subtype.property (x.seq n)), --use: (x.seq n) is a segment
+    }
+end
+
+theorem forall_exists_additive_inverse : ∀ x : ℛ, ∃ y : ℛ, add x y =' 0 :=
+begin
+    intro x,
+    use neg x,
+    rw ← sub,
+    exact sub_self_eq_zero x,
+end
+
+-- In traditional notation: (x + y) - y = x
+theorem sub_add (x y : ℛ) : sub (add x y) y =' x :=
+begin
+    rw sub,
+    transitivity add x (add y (neg y)),
+    exact add_assoc,
+    rw ← sub,
+    transitivity add x 0,
+    {-- need to prove: add x (sub y y) =' add x 0
+        exact eq_implies_add_eq_add (sub_self_eq_zero y),
+    },
+    exact add_zero,
+end
+
+theorem sub_add_comm {x y z : ℛ} : sub (add x y) z =' add x (sub y z) :=
+begin
+    rw sub,
+    rw sub,
+    exact add_assoc,
+end
+
 end real_seq
 
 
 /-
 TODO:
-1) Define inclusion from rationals intro reals using: ℚ → ℕ → 𝕊 := λ q, λ n, (q - 1 / 2^n, q + 1 / 2^n)
-2) Define 0 using λ n, (0, 0)
-3) Show that 0 in (2) and the embedding of 0 in (1) are equal
-
 Create other files for:
 5) Intermediate Value Theorem and its constructive counterparts
 6) Completeness of (ℛ, ≤)
