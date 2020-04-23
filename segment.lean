@@ -145,6 +145,13 @@ begin
     split,
     refl,
     refl,
+end 
+
+@[symm] theorem touches_symm (s t : 𝕊) : s ≈ t ↔ t ≈ s :=
+begin
+    repeat {rw touches},
+    repeat {rw le},
+    exact and.comm,
 end
 
 def add (s t : 𝕊) : 𝕊 := subtype.mk (s.fst + t.fst, s.snd + t.snd)

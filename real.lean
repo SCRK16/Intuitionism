@@ -293,6 +293,12 @@ begin
     }
 end
 
+@[symm] theorem eq_symm (x y : ℛ) : x =' y ↔ y =' x :=
+begin
+    repeat {rw eq},
+    simp [segment.touches_symm],
+end
+
 @[refl] theorem eq_refl (x : ℛ) : x =' x :=
 begin
     intro n,
@@ -371,13 +377,7 @@ def add (x y : ℛ) : ℛ := subtype.mk (λ n, segment.add (x.seq n) (y.seq n))
             cases hx.elim_right (q / 2) hq2 with xn hxn,
             cases hy.elim_right (q / 2) hq2 with yn hyn,
             use max xn yn,
-            simp,
-            rw segment.add,
-            rw segment.snd,
-            simp,
-            rw segment.fst,
-            simp,
-            rw add_sub_comm,
+            simp [add_sub_comm, segment.add, segment.fst, segment.snd],
             have hqa : (q / 2) + (q / 2) = q, by
             {
                 rw ← mul_two,
@@ -413,41 +413,19 @@ theorem add_assoc {x y z : ℛ} : add (add x y) z =' add x (add y z) :=
 begin
     intro n,
     split,
-    {-- need to prove: add (add x y) z ≤ add x (add y z)
-        repeat {
-            repeat {rw seq, rw add},
-            simp,
-        },
-        rw segment.add_assoc,
-        refl,
-    },
-    {-- need to prove: add x (add y z) ≤ add (add x y) z
-        repeat {
-            repeat {rw seq, rw add},
-            simp,
-        },
-        rw ← segment.add_assoc,
-        refl,
-    }
+    repeat {simp [seq, add, segment.add_assoc]},
 end
 
 theorem add_comm {x y : ℛ} : add x y =' add y x :=
 begin
     intro n,
     split,
-    repeat {
-        rwa [seq, seq, add, add],
-        simp,
-        rw segment.add_comm,
-    },
+    repeat {simp [seq, add, segment.add_comm]},
 end
 
 theorem add_zero {x : ℛ} : add x 0 =' x :=
 begin
-    rw zero,
-    rw add,
-    rw inclusion_const,
-    rw eq,
+    rwa [zero, add, inclusion_const, eq],
     intro n,
     simp [seq, segment.add, segment.fst, segment.snd, segment.inclusion, segment.touches],
 end
