@@ -1,5 +1,6 @@
 import ..Intuitionism.nat_seq
 import data.nat.basic
+import ..Intuitionism.reckless
 
 /--
 Brouwer's Continuity Principle
@@ -46,7 +47,7 @@ This can be seen as the other side of the coin to nat_seq.uncountable
 That theorem showed a function ℕ → 𝒩 can never be surjective, while this one shows
 that a function ℕ → 𝒩 can never be injective
 -/
-theorem strongly_not__injective (f : 𝒩 → ℕ) : ∀ a : 𝒩, ∃ b : 𝒩, a # b ∧ f(a) = f(b) :=
+theorem strongly_not_injective (f : 𝒩 → ℕ) : ∀ a : 𝒩, ∃ b : 𝒩, a # b ∧ f(a) = f(b) :=
 begin
     intro a,
     set R : 𝒩 → ℕ → Prop :=  λ (a : 𝒩) (n : ℕ), f a = n with hr,
@@ -96,7 +97,7 @@ example (f : 𝒩 → ℕ) : ¬ (∀ a b : 𝒩, f a = f b → nat_seq.eq a b) :
 begin
     intro h,
     have h0 := h nat_seq.zero,
-    cases strongly_not__injective f nat_seq.zero with b hb,
+    cases strongly_not_injective f nat_seq.zero with b hb,
     have hb0 := h0 b hb.elim_right,
     exact (nat_seq.ne_of_apart _ _ hb.elim_left) hb0,
 end
@@ -272,5 +273,93 @@ begin
         rw (hd₂ j hj.elim_left),
         symmetry,
         exact hj.elim_right,
+    }
+end
+
+
+theorem BCP_implies_not_LPO : ¬ reckless.LPO :=
+begin
+    intro h,
+    rw reckless.LPO at h,
+    set R : 𝒩 → ℕ → Prop := λ a, λ i, if i = 0 then ∀ n : ℕ, a n = 0 else ∃ n, a n ≠ 0 with hR,
+    have hr : ∀ a : 𝒩, ∃ n : ℕ, R a n, by
+    {
+        intro a,
+        cases h a with aeq0 ane0,
+        {-- case: ∀ n : ℕ, a n = 0
+            use 0,
+            rw hR,
+            split_ifs,
+            repeat {exact aeq0},
+        },
+        {-- case: ∃ n : ℕ, a n ≠ 0
+            use 1,
+            rw hR,
+            split_ifs,
+            {-- case: 1 = 0, impossible
+                exfalso,
+                have h_2 : ¬ (1 = 0), by simp,
+                exact h_2 h_1,
+            },
+            {-- need to prove: ∃ n : ℕ, a n ≠ 0
+                exact ane0,
+            }
+        }
+    },
+    have bcp_r := BCP R hr,
+    have bcp_r_0 := bcp_r nat_seq.zero,
+    cases bcp_r_0 with m bcp_r_0₁,
+    cases bcp_r_0₁ with n bcp_r_0₂,
+    cases nat.eq_zero_or_pos n with hn₁ hn₂,
+    {-- case: n = 0
+        rw hn₁ at bcp_r_0₂,
+        set b : 𝒩 := λ k, if k < m then 0 else 1 with hb,
+        have bcp_b := bcp_r_0₂ b,
+        have bstart0 : (∀ (i : ℕ), i < m → nat_seq.zero i = b i), by
+        {
+            intros i hi,
+            simp [nat_seq.zero, hb],
+            split_ifs,
+            refl,
+        },
+        have bcp_b₁ := bcp_b bstart0,
+        rw hR at bcp_b₁,
+        split_ifs at bcp_b₁,
+        {-- case: 0 = 0, need to prove: ∀ n : ℕ, b n = 0 leads to a contradiction
+            
+            have hm := bcp_b₁ m,
+            simp [hb] at hm,
+            split_ifs at hm,
+            {-- case: m < m, impossible
+                have hm₂ := ne_of_gt h_2,
+                apply hm₂,
+                refl,
+            },
+            {-- case: ¬ m < m, need to prove: false, we use hm (1 = 0)
+                apply nat.one_ne_zero,
+                exact hm,
+            }
+        },
+        {-- case: ¬ 0 = 0, impossible
+            apply h_1,
+            refl,
+        }
+    },
+    {-- case: n > 0
+        have h₀ := bcp_r_0₂ nat_seq.zero,
+        have h₁ : (∀ (i : ℕ), i < m → nat_seq.zero i = nat_seq.zero i), by simp,
+        have h₂ := h₀ h₁,
+        rw hR at h₂,
+        split_ifs at h₂,
+        {-- case: n = 0, impossible since we assumed n > 0
+            have hn₃ := or.intro_right (n < 0) hn₂,
+            rw ← ne_iff_lt_or_gt at hn₃,
+            exact hn₃ h_1,
+        },
+        {-- have: ∃ n, nat_seq.zero n ≠ 0, this is a contradiction with the definition of nat_seq.zero
+            cases h₂ with k hk,
+            apply hk,
+            simp [nat_seq.zero],
+        }   
     }
 end

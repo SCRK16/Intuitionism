@@ -327,7 +327,7 @@ One might expect a ≤ b → a < b ∨ a = b,
 but this statement is actually implies LPO, and therefore reckless
 -/
 theorem reckless_LPO_le_implies_lt_or_eq :
-    reckless_LPO (∀ a b : 𝒩, a ≤ b → a < b ∨ nat_seq.eq a b) :=
+    reckless_LPO (∀ a b : 𝒩, a ≤ b → a < b ∨ a =' b) :=
 begin
     intros h₁ a,
     have hz := nat_seq.zero_le a,
