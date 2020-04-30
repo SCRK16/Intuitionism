@@ -14,6 +14,8 @@ def finitize (a : 𝒩) (n : ℕ) : fin_seq := {
     seq := λ i, a i
 }
 
+lemma finitize_len (a : 𝒩) (n : ℕ) : (finitize a n).len = n := rfl
+
 def is_initial_of (a : fin_seq) (b : 𝒩) := ∀ i : fin a.len, a.seq i = b i
 
 infix `⊑`:50 := is_initial_of
@@ -88,6 +90,37 @@ def singleton (n : ℕ) : fin_seq := {
     len := 1,
     seq := λ i, n
 }
+
+lemma finitize_initial_iff_fin_eq (a b : 𝒩) (n : ℕ) : finitize a n ⊑ b ↔ ∀ i : fin n, a i = b i :=
+begin
+    split,
+    repeat {
+        intros h i,
+        exact h i,
+    },
+end
+
+lemma fin_eq_iff_start_eq (a b : 𝒩) (n : ℕ) : (∀ i : fin n, a i = b i) ↔ (∀ j : ℕ, j < n → a j = b j) :=
+begin
+    split,
+    {-- need to prove: (∀ i : fin n, a ↑i = b ↑i) → (∀ j : ℕ, j < n → a j = b j)
+        intros h j hj,
+        set i := fin.mk j hj with hi,
+        have hi' := h i,
+        simp [hi] at hi',
+        exact hi', 
+    },
+    {-- need to prove: (∀ j : ℕ, j < n → a j = b j) → (∀ i : fin n, a ↑i = b ↑i)
+        intros h i,
+        exact h i i.is_lt,
+    }
+end
+
+theorem finitize_initial_iff_start_eq (a b : 𝒩) (n : ℕ) : finitize a n ⊑ b ↔ (∀ j : ℕ, j < n → a j = b j) :=
+begin
+    rw finitize_initial_iff_fin_eq,
+    exact fin_eq_iff_start_eq _ _ _,
+end
 
 end fin_seq
 
