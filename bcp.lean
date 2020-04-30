@@ -93,7 +93,7 @@ The above theorem perhaps isn't how a classical mathematician would define "not 
 This example should remove any doubts that the theorem above shows
 that the function is not injective
 -/
-example (f : 𝒩 → ℕ) : ¬ (∀ a b : 𝒩, f a = f b → nat_seq.eq a b) :=
+example (f : 𝒩 → ℕ) : ¬ (∀ a b : 𝒩, f a = f b → a ='b) :=
 begin
     intro h,
     have h0 := h nat_seq.zero,
