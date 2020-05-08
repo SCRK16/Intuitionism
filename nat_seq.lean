@@ -387,6 +387,23 @@ begin
     exact not_of_not_not_not,
 end
 
+theorem eq_of_le_le {a b : 𝒩} (hab : a ≤ b) (hba : b ≤ a) : a =' b :=
+begin
+    intro n,
+    apply nat.strong_induction_on n,
+    intros d hd,
+    rw le at *,
+    have hle := hab d hd,
+    have hge : b d ≤ a d, by
+    {
+        apply hba,
+        intros i hi,
+        symmetry,
+        exact hd i hi,
+    },
+    exact le_antisymm hle hge,
+end
+
 def apart (a b : 𝒩) : Prop := ∃ n, a n ≠ b n
 
 infix `#` := apart
