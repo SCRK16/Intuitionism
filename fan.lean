@@ -16,7 +16,8 @@ variables {β σ : fin_seq → ℕ}
 
 def is_spread_law (σ : fin_seq → ℕ) : Prop := 
     σ empty_seq = 0 ∧
-    (∀ s : fin_seq, σ s = 0 → ∃ n : ℕ, σ (extend s (singleton n)) = 0)
+    (∀ s : fin_seq, σ s = 0 ↔ ∃ n : ℕ, σ (extend s (singleton n)) = 0)
+
 
 --TODO: Take another look at this
 structure spread := mk :: 
@@ -65,3 +66,5 @@ axiom fan_theorem (B : set fin_seq) (hB : @is_bar' β hβ B) :
 
 --Error: a is not a subtype anymore
 --def is_bar (B : set fin_seq) (F : fan) : Prop := ∀ a : F.fan, ∃ n : ℕ, finitize a.val n ∈ B
+
+-- Can you do something like: fan extends spread?
