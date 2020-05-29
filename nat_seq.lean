@@ -115,6 +115,23 @@ begin
     }
 end
 
+--The following lemma immediately follows from lt_eq_ne_le and n = m ↔ (n ≤ m ∨ m ≤ n)
+--We will use this in reckless.lean to prove weak_LEM_implies_LLPO
+lemma first_zero_eq (a : 𝒩) (n m : ℕ) (hn1 : ∀ i : ℕ, i < n → a i = 0) (hn2 : a n ≠ 0)
+        (hm1 : ∀ i : ℕ, i < m → a i = 0) (hm2 : a m ≠ 0) :
+        n = m :=
+begin
+    rw eq_iff_le_not_lt,
+    split,
+    {-- need to prove: n ≤ m
+        apply lt_eq_ne_le a zero n m hn1 hm2,
+    },
+    {-- need to prove: ¬n < m
+        apply not_lt_of_le,
+        apply lt_eq_ne_le a zero m n hm1 hn2,
+    }
+end
+
 theorem le_of_lt (a b : 𝒩) (less: a < b) : a ≤ b :=
 begin
     rw le,
