@@ -77,24 +77,6 @@ begin
     }
 end
 
-theorem implies_LPO (hpq : P → Q) (hq : Q → LPO) : P → LPO :=
-begin
-    intro hp,
-    exact hq (hpq hp),
-end
-
-theorem implies_LLPO (hpq : P → Q) (hq : Q → LLPO) : P → LLPO :=
-begin
-    intro hp,
-    exact hq (hpq hp),
-end
-
-lemma not_not_of_self : P → ¬¬P :=
-begin
-    intros h₁ h₂,
-    exact h₂ h₁,
-end
-
 theorem LPO_implies_LLPO : LPO → LLPO :=
 begin
     intro lpo,
@@ -231,91 +213,6 @@ begin
     }
 end
 
-/-
-TODO: Figure out if NPO can be replaced by LPO in the following theorem
--/
-theorem reckless_NPO_not_not_or : reckless_LPO (∀ P Q : Prop, ¬¬(P ∨ Q) → (¬¬P ∨ ¬¬Q)) :=
-begin
-/-
-    intros h₁ P,
-    have h₂ := h₁ P (¬P) (not_not_PO P),
-    cases h₂ with nn nnn,
-    {-- case: ¬¬P
-        right,
-        exact nn
-    },
-    {-- case: ¬¬¬P
-        left,
-        exact (not_not_not_implies_not P nnn),
-    }
--/
-    split,
-    {
-        intros po P Q h,
-        have hp := po P,
-        sorry,
-    },
-    {
-        sorry,
-    }
-end
-
-
-/--
-If P ∨ ¬P holds for some proposition P, then eliminating double negation is allowed for P
--/
-lemma or_not_implies_not_not_implies (h : P ∨ ¬P) : ¬¬P → P :=
-begin
-    intro hp,
-    cases h with p np,
-    exact p,
-    exfalso,
-    exact hp np,
-end
-
-/-
-TODO: Figure out if NPO can be replaced by LPO in the following theorem
-
-/--
-This theorem shows that the converse of the previous lemma is reckless_NPO
--/
-theorem reckless_NPO_not_not_implies_implies_or_not :
-    reckless_NPO (∀ P : Prop, (¬¬P → P) → P ∨ ¬P) :=
-begin
-    intros h Q,
-    have hq := h (¬Q),
-    exact hq (not_not_not_implies_not Q),
-end
-
--/
-
--- A reminder that brackets are important
-example : (∀ P : Prop, ¬¬P → P) → (P ∨ ¬P) :=
-begin
-    intro h,
-    exact h (P ∨ ¬P) (not_not_or P),
-end
-
-/-
-Classically this would be equivalent to PO  
-Constructively, this version is weaker, and unlike PO, always holds
--/
-lemma not_and_not : ¬(P ∧ ¬P) :=
-begin
-    intro h,
-    exact h.elim_right h.elim_left,
-end
-
-/- TODO: Figure out if NPO can be replaced by LPO in the following theorem
-
-theorem reckless_NPO_not_and_implies_not_or_not :
-    reckless_NPO (∀ P Q : Prop, ¬(P ∧ Q) → (¬P ∨ ¬Q)) :=
-begin
-    intros h P,
-    exact h P (¬P) (not_and_not P),
-end
--/
-
 /--
 Given a b : 𝒩, we already know that a < b → a ≤ b, and that a = b → a ≤ b  
 However, this theorem shows that the opposite is not true  
@@ -359,29 +256,16 @@ begin
     },
 end
 
--- It is okay to assume PO when deriving a negative conclusion
-theorem PO_implies_not_implies_not : ∀ P : Prop, (P ∨ ¬P → ¬Q) → ¬Q :=
+-- The two following theorems look funny together
+theorem implies_not_implies_not : ∀ P Q : Prop, (P ∨ ¬P → ¬Q) → ¬Q :=
 begin
-    intros P h hq,
+    intros P Q h hq,
     have h₁ := mt h,
-    have h₂ := h₁ (not_not_of_self Q hq),
+    have h₂ := h₁ (not_not_intro hq),
     exact (not_not_or P) h₂,
 end
 
-/-
-theorem PO_implies_not_implies_not' : (PO → ¬Q) → ¬Q :=
-begin
-    intros h hq,
-    have h₁ := mt h,
-    have h₂ := h₁ (not_not_of_self Q hq),
-    --exact not_not_or h₂, -- needed: ¬¬PO
-    sorry,
-end
--/
-
-
---But not when deriving a positive conclusion
-theorem reckless_LPO_implies : reckless_LPO (∀ P Q : Prop, (P ∨ ¬P → Q) → Q) :=
+theorem reckless_LPO_implies_implies : reckless_LPO (∀ P Q : Prop, (P ∨ ¬P → Q) → Q) :=
 begin
     split,
     {
@@ -399,5 +283,181 @@ begin
     }
 end
 
+def WLEM : Prop := ∀ P : Prop, ¬P ∨ ¬¬P
+
+def WLPO : Prop := ∀ a : 𝒩, (∀ n : ℕ, a n = 0) ∨ (¬∀ n : ℕ, a n = 0)
+
+theorem weak_LEM_implies_weak_LPO : WLEM → WLPO :=
+begin
+    intros wlem a,
+    cases wlem (∃ n : ℕ, a n ≠ 0) with nh nnh,
+    {-- case: ¬∃ (n : ℕ), a n ≠ 0
+        left,
+        have h : ∀ n : ℕ, ¬ a n ≠ 0 := forall_not_of_not_exists nh,
+        intro n,
+        have hn := h n,
+        rwa [ne.def, not_not] at hn,
+    },
+    {-- case: ¬¬∀ (n : ℕ), a n = 0
+        right,
+        intro h,
+        apply nnh,
+        intro nex,
+        cases nex with n nhn,
+        have hn := h n,
+        exact nhn hn,
+    }
+end
+
+theorem weak_LEM_implies_LLPO : WLEM → LLPO := 
+begin
+    intros wlem b,
+    cases wlem (∀ (k : ℕ), (∀ (i : ℕ), i < k → b i = 0) ∧ b k ≠ 0 → k % 2 = 0) with nh nnh,
+    {-- case: ¬∀ (k : ℕ), (∀ (i : ℕ), i < k → b i = 0) ∧ b k ≠ 0 → k % 2 = 0
+        right, -- need to prove: ∀ (k : ℕ), (∀ (i : ℕ), i < k → b i = 0) ∧ b k ≠ 0 → k % 2 = 1
+        intros k hk,
+        rw ← nat.mod_two_ne_zero,
+        intro h,
+        apply nh,
+        intros j hj,
+        have hjk : j = k := nat_seq.first_zero_eq b j k hj.elim_left hj.elim_right hk.elim_left hk.elim_right,
+        rw hjk,
+        exact h,
+    },
+    {-- case: ¬¬∀ (k : ℕ), (∀ (i : ℕ), i < k → b i = 0) ∧ b k ≠ 0 → k % 2 = 0
+        left, -- need to prove: ∀ (k : ℕ), (∀ (i : ℕ), i < k → b i = 0) ∧ b k ≠ 0 → k % 2 = 0
+        intros k hk,
+        rw ← nat.mod_two_ne_one,
+        rw ← nat.mod_two_ne_zero,
+        intro h0,
+        apply nnh,
+        intro h,
+        exact h0 (h k hk),
+    }
+end
+
+theorem reckless_LLPO_not_not_or : reckless_LLPO (∀ P Q : Prop, ¬¬(P ∨ Q) → (¬¬P ∨ ¬¬Q)) :=
+begin
+    split,
+    {-- need to prove: PO → ∀ (P Q : Prop), ¬¬(P ∨ Q) → ¬¬P ∨ ¬¬Q
+        intros po P Q h,
+        cases po P with hp np,
+        {-- case: P
+            left,
+            intro np,
+            exact np hp,
+        },
+        {-- case: ¬P
+            cases po Q with hq nq,
+            {-- case: Q
+                right,
+                intro nq,
+                exact nq hq,
+            },
+            {-- case: ¬Q
+                exfalso,
+                apply h,
+                intro pq,
+                cases pq with hp hq,
+                {-- case: P
+                    exact np hp,
+                },
+                {-- case: Q
+                    exact nq hq,
+                }
+            }
+        }
+    },
+    {-- need to prove: (∀ (P Q : Prop), ¬¬(P ∨ Q) → ¬¬P ∨ ¬¬Q) → LPO
+        intro h₁,
+        apply weak_LEM_implies_LLPO,
+        intro P,
+        have h₂ := h₁ P (¬P) (not_not_or P),
+        cases h₂ with nn nnn,
+        {-- case: ¬¬P
+            right,
+            exact nn
+        },
+        {-- case: ¬¬¬P
+            left,
+            exact (not_not_not_iff P).mp nnn,
+        }
+    }
+end
+
+/-
+Classically this would be equivalent to PO (they have the same truth table)
+Constructively, this version is weaker, and unlike PO, always holds
+-/
+lemma not_and_not : ¬(P ∧ ¬P) :=
+begin
+    intro h,
+    exact h.elim_right h.elim_left,
+end
+
+theorem reckless_LLPO_not_and_implies_not_or_not : reckless_LLPO (∀ P Q : Prop, ¬(P ∧ Q) → (¬P ∨ ¬Q)) :=
+begin
+    split,
+    {-- need to prove: PO → ∀ (P Q : Prop), ¬(P ∧ Q) → ¬P ∨ ¬Q
+        intros po P Q h,
+        cases po P with hp np,
+        {-- case: P
+            cases po Q with hq nq,
+            {-- case: Q
+                exfalso,
+                exact h (and.intro hp hq),
+            },
+            {-- case: ¬Q
+                right,
+                exact nq,
+            }
+        },
+        {-- case: ¬P
+            left,
+            exact np,
+        }
+    },
+    {-- need to prove: (∀ (P Q : Prop), ¬(P ∧ Q) → ¬P ∨ ¬Q) → LLPO
+        intro h,
+        apply weak_LEM_implies_LLPO,
+        intro P,
+        exact h P (¬P) (not_and_not P),
+    }
+end
+
+/--
+If P ∨ ¬P holds for some proposition P, then eliminating double negation is allowed for P
+-/
+lemma or_not_implies_not_not_implies (h : P ∨ ¬P) : ¬¬P → P :=
+begin
+    intro hp,
+    cases h with p np,
+    exact p,
+    exfalso,
+    exact hp np,
+end
+
+theorem reckless_LLPO_not_not_implies_or : reckless_LLPO (∀ P : Prop, (¬¬P → P) → P ∨ ¬P) :=
+begin
+    split,
+    {-- need to prove: PO → ∀ (P : Prop), (¬¬P → P) → P ∨ ¬P
+        intros po P h,
+        exact po P,
+    },
+    {-- need to prove: (∀ (P : Prop), (¬¬P → P) → P ∨ ¬P) → LLPO
+        intro h,
+        apply weak_LEM_implies_LLPO,
+        intro P,
+        have hp := h (¬P),
+        exact hp (not_not_not_iff P).mp,
+    }
+end
+
+-- A reminder that brackets are important
+example : (∀ P : Prop, ¬¬P → P) → (∀ P : Prop, P ∨ ¬P) :=
+begin
+    intros h P,
+    exact h (P ∨ ¬P) (not_not_or P),
+end
 
 end reckless
