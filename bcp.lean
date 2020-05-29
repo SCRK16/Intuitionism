@@ -8,8 +8,8 @@ If the relation R on 𝒩×ℕ satisfies:
 for all infinite sequences α ∈ 𝒩 there is an n ∈ ℕ such that (α R n),
 then the relation should be decidable based on an initial part of α
 -/
-axiom BCP (R : 𝒩 → ℕ → Prop) (hr : ∀ a : 𝒩, ∃ n : ℕ, R a n) : 
-    (∀ a : 𝒩, ∃ m n: ℕ, ∀ b : 𝒩, (∀ i : ℕ, i < m → a i = b i) → R b n)
+def BCP : Prop := ∀ R : 𝒩 → ℕ → Prop,
+    (∀ a : 𝒩, ∃ n : ℕ, R a n) → (∀ a : 𝒩, ∃ m n: ℕ, ∀ b : 𝒩, (∀ i : ℕ, i < m → a i = b i) → R b n)
 
 /--
 If a sequence of naturals α and a natural number n are given,
@@ -47,7 +47,7 @@ This can be seen as the other side of the coin to nat_seq.uncountable
 That theorem showed a function ℕ → 𝒩 can never be surjective, while this one shows
 that a function ℕ → 𝒩 can never be injective
 -/
-theorem strongly_not_injective (f : 𝒩 → ℕ) : ∀ a : 𝒩, ∃ b : 𝒩, a # b ∧ f(a) = f(b) :=
+theorem strongly_not_injective (bcp : BCP) (f : 𝒩 → ℕ) : ∀ a : 𝒩, ∃ b : 𝒩, a # b ∧ f(a) = f(b) :=
 begin
     intro a,
     set R : 𝒩 → ℕ → Prop :=  λ (a : 𝒩) (n : ℕ), f a = n with hr,
@@ -57,7 +57,7 @@ begin
         use f a,
         rw hr,
     },
-    have bcpr := BCP R g₁, -- we use BCP here
+    have bcpr := bcp R g₁, -- we use BCP here
     have bcpa := bcpr a,
     cases bcpa with m bcpa_m,
     cases bcpa_m with n bcpcon,
@@ -93,11 +93,11 @@ The above theorem perhaps isn't how a classical mathematician would define "not 
 This example should remove any doubts that the theorem above shows
 that the function is not injective
 -/
-example (f : 𝒩 → ℕ) : ¬ (∀ a b : 𝒩, f a = f b → a ='b) :=
+example (bcp : BCP) (f : 𝒩 → ℕ) : ¬ (∀ a b : 𝒩, f a = f b → a ='b) :=
 begin
     intro h,
     have h0 := h nat_seq.zero,
-    cases strongly_not_injective f nat_seq.zero with b hb,
+    cases strongly_not_injective bcp f nat_seq.zero with b hb,
     have hb0 := h0 b hb.elim_right,
     exact (nat_seq.ne_of_apart _ _ hb.elim_left) hb0,
 end
@@ -185,7 +185,7 @@ Another example to demonstrate the power of BCP
 If two sequences are apart, then a third sequence cannot be equal to both
 (and which sequence it is not equal to can be determined)
 -/
-theorem apart_iff_forall_ne_or_ne (a b : 𝒩) : a # b ↔ ∀ c : 𝒩, a ≠' c ∨ c ≠' b :=
+theorem apart_iff_forall_ne_or_ne (bcp : BCP) (a b : 𝒩) : a # b ↔ ∀ c : 𝒩, a ≠' c ∨ c ≠' b :=
 begin
     split,
     {-- need to prove: a # b → ∀ c : 𝒩, c ≠ a ∨ c ≠ b
@@ -223,7 +223,7 @@ begin
                 use 1,
             }
         },
-        have bcpr := BCP R hr,
+        have bcpr := bcp R hr,
         have bcpb := bcpr b,
         cases bcpb with m bcpbm,
         cases bcpbm with n bcpbmn,
@@ -277,9 +277,9 @@ begin
 end
 
 
-theorem BCP_implies_not_LPO : ¬ reckless.LPO :=
+theorem BCP_implies_not_LPO : BCP → ¬ reckless.LPO :=
 begin
-    intro h,
+    intros bcp h,
     rw reckless.LPO at h,
     set R : 𝒩 → ℕ → Prop := λ a, λ i, if i = 0 then ∀ n : ℕ, a n = 0 else ∃ n, a n ≠ 0 with hR,
     have hr : ∀ a : 𝒩, ∃ n : ℕ, R a n, by
@@ -306,7 +306,7 @@ begin
             }
         }
     },
-    have bcp_r := BCP R hr,
+    have bcp_r := bcp R hr,
     have bcp_r_0 := bcp_r nat_seq.zero,
     cases bcp_r_0 with m bcp_r_0₁,
     cases bcp_r_0₁ with n bcp_r_0₂,
