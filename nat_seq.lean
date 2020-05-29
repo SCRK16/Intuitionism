@@ -115,6 +115,23 @@ begin
     }
 end
 
+--The following lemma immediately follows from lt_eq_ne_le and n = m ↔ (n ≤ m ∨ m ≤ n)
+--We will use this in reckless.lean to prove weak_LEM_implies_LLPO
+lemma first_zero_eq (a : 𝒩) (n m : ℕ) (hn1 : ∀ i : ℕ, i < n → a i = 0) (hn2 : a n ≠ 0)
+        (hm1 : ∀ i : ℕ, i < m → a i = 0) (hm2 : a m ≠ 0) :
+        n = m :=
+begin
+    rw eq_iff_le_not_lt,
+    split,
+    {-- need to prove: n ≤ m
+        apply lt_eq_ne_le a zero n m hn1 hm2,
+    },
+    {-- need to prove: ¬n < m
+        apply not_lt_of_le,
+        apply lt_eq_ne_le a zero m n hm1 hn2,
+    }
+end
+
 theorem le_of_lt (a b : 𝒩) (less: a < b) : a ≤ b :=
 begin
     rw le,
@@ -385,6 +402,23 @@ theorem le_stable (a b : 𝒩) : ¬¬a ≤ b → a ≤ b :=
 begin
     rw le_iff_not_lt,
     exact not_of_not_not_not,
+end
+
+theorem eq_of_le_le {a b : 𝒩} (hab : a ≤ b) (hba : b ≤ a) : a =' b :=
+begin
+    intro n,
+    apply nat.strong_induction_on n,
+    intros d hd,
+    rw le at *,
+    have hle := hab d hd,
+    have hge : b d ≤ a d, by
+    {
+        apply hba,
+        intros i hi,
+        symmetry,
+        exact hd i hi,
+    },
+    exact le_antisymm hle hge,
 end
 
 def apart (a b : 𝒩) : Prop := ∃ n, a n ≠ b n
