@@ -17,6 +17,8 @@ def eq (a b : 𝒩) : Prop := ∀ n : ℕ, a n = b n
 
 infix `='`:50 := eq
 
+lemma eq_iff {a b : 𝒩} : a = b ↔ a =' b := function.funext_iff
+
 def ne (a b : 𝒩) : Prop := ¬ a =' b
 
 infix `≠'`:50 := ne
@@ -57,20 +59,18 @@ end
 
 @[trans] theorem eq_trans (a b c : 𝒩) : a =' b → b =' c → a =' c :=
 begin
-    intro ab,
-    intro bc,
-    intro n,
+    intros ab bc n,
     rw ab n,
     exact bc n,
 end
 
-@[symm] theorem eq_symm (a b: 𝒩) : a =' b ↔ b =' a :=
+@[symm] theorem eq_symm {a b: 𝒩} : a =' b ↔ b =' a :=
 begin
     split,
     repeat {intros h n, symmetry, exact h n},
 end
 
-@[refl] theorem eq_refl (a : 𝒩) : a =' a :=
+@[refl] theorem eq_refl {a : 𝒩} : a =' a :=
 begin
     intro n,
     refl,
@@ -156,8 +156,7 @@ end
 
 @[trans] theorem lt_trans (a b c : 𝒩) : a < b → b < c → a < c :=
 begin
-    intro hab,
-    intro hbc,
+    intros hab hbc,
     cases hab with n hn,
     cases hbc with m hm,
     cases hn with p₁ p₂,
@@ -165,18 +164,15 @@ begin
     use min n m,
     split,
     {--need to prove: ∀ (i : ℕ), i < min n m → a i = c i
-        intro i,
-        intro hi,
+        intros i hi,
         rw lt_min_iff at hi,
-        cases hi with i₁ i₂,
-        rw p₁ i i₁,
-        exact q₁ i i₂,
+        rw p₁ i hi.elim_left,
+        exact q₁ i hi.elim_right,
     },
     {--need to prove: a (min n m) < c (min n m)
-        cases lt_trichotomy n m with nltm h,
+        cases nat.lt_trichotomy n m with nltm h,
         {-- n < m
-            have mineqn := min_eq_left (nat.le_of_lt nltm),
-            rw mineqn,
+            rw min_eq_left (nat.le_of_lt nltm),
             rw ← q₁ n nltm,
             exact p₂,
         },
@@ -185,11 +181,10 @@ begin
             {-- n = m
                 rw neqm at *,
                 rw min_self,
-                exact lt_trans p₂ q₂,
+                exact nat.lt_trans p₂ q₂,
             },
             {-- m < n
-                have mineqm := min_eq_right (nat.le_of_lt mltn),
-                rw mineqm,
+                rw min_eq_right (nat.le_of_lt mltn),
                 rw p₁ m mltn,
                 exact q₂,
             }
@@ -355,8 +350,6 @@ begin
     split,
     {-- need to prove: a ≤ b → ¬ b < a
         intro h,
-        rw le at h,
-        rw lt,
         intro ex,
         cases ex with n hn,
         have g := h n,
@@ -366,14 +359,12 @@ begin
         rw nat.lt_iff_le_not_le at blta,
         exact and.elim_right blta aleb,
     },
-    {
-        intro h,
-        intro n,
-        intro hi,
+    {-- need to prove: ¬ b < a → a ≤ b
+        intros h n hi,
         cases le_or_gt (a n) (b n) with hle hgt,
-        exact hle,
-        rw gt_iff_lt at hgt,
-        exfalso,
+        exact hle, -- case: a ≤ b
+        exfalso, -- case: b < a
+        rw gt_iff_lt at hgt, 
         apply h,
         use n,
         split,
@@ -426,9 +417,9 @@ def apart (a b : 𝒩) : Prop := ∃ n, a n ≠ b n
 infix `#` := apart
 
 -- If two natural sequences are apart from eachother, they are not equal
-theorem ne_of_apart (a b : 𝒩) (r : a # b) : a ≠' b :=
+theorem ne_of_apart (a b : 𝒩) : a # b → a ≠' b :=
 begin
-    intro h,
+    intros r h,
     cases r with n hn,
     apply hn,
     apply h,
@@ -450,8 +441,7 @@ begin
         rwa [apart, not_exists] at h,
         have g := h n,
         rwa [ne_iff_lt_or_gt, not_or_distrib] at g,
-        have tri := lt_trichotomy (a n) (b n),
-        cases tri with l r,
+        cases lt_trichotomy (a n) (b n) with l r,
         {-- case: a n < b n, can't happen because ¬ a n < b n
             exfalso,
             exact (and.elim_left g) l,
@@ -575,6 +565,18 @@ begin
     }
 end
 
+@[symm] theorem apart_symm (a b : 𝒩) : a # b ↔ b # a :=
+begin
+    split,
+    repeat {
+        intro h,
+        cases h with n hn,
+        use n,
+        symmetry,
+        exact hn,
+    },
+end
+
 -- 0 is the smallest sequence
 lemma zero_le (a : 𝒩) : zero ≤ a :=
 begin
@@ -602,7 +604,7 @@ end
 There are uncountably (defined positively) many natural sequences.
 The proof of this theorem is Cantor's Diagonal argument
 -/
-theorem uncountable (f : ℕ → 𝒩): ∃ a : 𝒩, ∀ n : ℕ, a # (f n) :=
+theorem uncountable (f : ℕ → 𝒩) : ∃ a : 𝒩, ∀ n : ℕ, a # (f n) :=
 begin
     use λ n : ℕ, (f n n) + 1,
     intro n,

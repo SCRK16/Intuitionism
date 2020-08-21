@@ -33,18 +33,10 @@ Used to extract the underlying sequence of rational segments
 def seq (r : ℛ) : ℕ → 𝕊 := subtype.val r
 
 -- We can turn a real segment into a sequence of rationals by only taking the first position
-def fst (r : ℛ): ℕ → ℚ :=
-begin
-    intro n,
-    exact (r.seq n).fst,
-end
+def fst (r : ℛ) : ℕ → ℚ := λ n, (r.seq n).fst
 
 -- We can turn a real segment into a sequence of rationals by only taking the second position
-def snd (r : ℛ) : ℕ → ℚ :=
-begin
-    intro n,
-    exact (r.seq n).snd,
-end
+def snd (r : ℛ) : ℕ → ℚ := λ n, (r.seq n).snd
 
 lemma shrinking (r : ℛ) : shrinking r.val := (subtype.property r).elim_left
 
@@ -87,7 +79,7 @@ def ne (x y : ℛ) : Prop := ¬ x =' y
 
 infix `≠'`:50 := ne
 
-@[trans] theorem lt_trans (x y z: ℛ) (h₁ : x < y) (h₂ : y < z) : x < z :=
+@[trans] theorem lt_trans (x y z : ℛ) (h₁ : x < y) (h₂ : y < z) : x < z :=
 begin
     cases h₁ with n hn,
     cases h₂ with m hm,
@@ -101,7 +93,6 @@ begin
         exact h₂.elim_left,
     },
     {-- need to prove: seq y (max m n) < seq z (max m n)
-        rw segment.lt at *,
         have h₁ := contained_of_le y (le_max_left m n),
         have h₂ := contained_of_le z (le_max_left m n),
         apply lt_of_le_of_lt h₁.elim_right,
@@ -147,18 +138,15 @@ theorem lt_cotrans (x y z : ℛ) (h₁ : x < y) : x < z ∨ z < y :=
 begin
     cases h₁ with n hn,
     rwa [segment.lt, ← sub_pos, ← gt_from_lt] at hn,
-    have hz := z.dwindling (segment.fst (seq y n) - segment.snd (seq x n)) hn,
-    cases hz with m hm,
-    have hm₂ := lt_or_lt_from_sub_lt_sub hm,
-    cases hm₂ with zlty xltz,
+    cases z.dwindling (segment.fst (seq y n) - segment.snd (seq x n)) hn with m hm,
+    cases lt_or_lt_from_sub_lt_sub hm with zlty xltz,
     {-- case: z.snd m < y.fst n
         right,
         use max m n,
         have h₁ := contained_of_le z (le_max_left m n),
         have h₂ := contained_of_le y (le_max_right m n),
         apply lt_of_le_of_lt h₁.elim_right,
-        apply lt_of_lt_of_le zlty,
-        exact h₂.elim_left,
+        exact lt_of_lt_of_le zlty h₂.elim_left,
     },
     {-- case: x.snd n < z.fst m
         left,
@@ -166,8 +154,7 @@ begin
         have h₁ := contained_of_le z (le_max_left m n),
         have h₂ := contained_of_le x (le_max_right m n),
         apply lt_of_le_of_lt h₂.elim_right,
-        apply lt_of_lt_of_le xltz,
-        exact h₁.elim_left,
+        exact lt_of_lt_of_le xltz h₁.elim_left,
     }
 end
 
@@ -220,6 +207,18 @@ begin
     }
 end
 
+theorem eq_of_le_of_le (x y : ℛ) : x ≤ y → y ≤ x → x =' y :=
+begin
+    intros hxy hyx n,
+    split,
+    {-- need to prove: seq x n ≤ seq y n
+        exact hxy n,
+    },
+    {-- need to prove: seq y n ≤ seq x n
+        exact hyx n,
+    }
+end
+
 @[trans] theorem le_trans (x y z : ℛ) (h₁ : x ≤ y) (h₂ : y ≤ z) : x ≤ z :=
 begin
     rw le_iff_not_lt at *,
@@ -239,7 +238,7 @@ begin
     refl,
 end
 
-theorem eq_iff_not_apart (x y : ℛ) : x =' y ↔ ¬ x # y :=
+theorem eq_iff_not_apart (x y : ℛ) : x =' y ↔ ¬x # y :=
 begin
     split,
     {-- need to prove: x = y → ¬ x # y
@@ -281,8 +280,7 @@ end
 begin
     rw eq_iff_not_apart,
     intro h₃,
-    have h₄ := apart_cotrans x z y h₃,
-    cases h₄ with xay yaz,
+    cases apart_cotrans x z y h₃ with xay yaz,
     {-- case: x # y
         rw eq_iff_not_apart at h₁,
         exact h₁ xay,
@@ -305,7 +303,7 @@ begin
     refl,
 end
 
-theorem le_stable (x y : ℛ) : ¬¬x ≤ y →  x ≤ y :=
+theorem le_stable (x y : ℛ) : ¬¬x ≤ y → x ≤ y :=
 begin
     rw le_iff_not_lt,
     exact not_of_not_not_not,
@@ -390,21 +388,17 @@ def add (x y : ℛ) : ℛ := subtype.mk (λ n, segment.add (x.seq n) (y.seq n))
                 have hm : segment.snd (seq x (max xn yn)) - segment.fst (seq x (max xn yn)) ≤ (segment.snd (x.val xn) - segment.fst (x.val xn)), by
                 {-- need to prove: snd - fst of x.seq (max xn yn) < snd - fst of x.seq xn
                     apply segment.contained_bounds_le,
-                    apply contained_of_le,
-                    exact le_max_left xn yn,
+                    apply contained_of_le _ (le_max_left _ _),
                 },
-                apply lt_of_le_of_lt hm,
-                exact hxn,
+                exact lt_of_le_of_lt hm hxn,
             },
             {
                 have hm : segment.snd (seq y (max xn yn)) - segment.fst (seq y (max xn yn)) ≤ (segment.snd (y.val yn) - segment.fst (y.val yn)), by
                 {-- need to prove: snd - fst of x.seq (max xn yn) < snd - fst of x.seq xn
                     apply segment.contained_bounds_le,
-                    apply contained_of_le,
-                    exact le_max_right xn yn,
+                    exact contained_of_le _ (le_max_right _ _),
                 },
-                apply lt_of_le_of_lt hm,
-                exact hyn,
+                exact lt_of_le_of_lt hm hyn,
             }
         }
     end
@@ -425,9 +419,9 @@ end
 
 theorem add_zero {x : ℛ} : add x 0 =' x :=
 begin
-    rwa [zero, add, inclusion_const, eq],
     intro n,
-    simp [seq, segment.add, segment.fst, segment.snd, segment.inclusion, segment.touches],
+    simp [zero, add, inclusion_const, seq, segment.add,
+        segment.fst, segment.snd, segment.inclusion, segment.touches],
 end
 
 theorem zero_add {x : ℛ} : add 0 x =' x :=
@@ -439,10 +433,8 @@ end
 
 theorem eq_implies_add_eq_add {x y z : ℛ} : y =' z → add x y =' add x z :=
 begin
-    repeat {rw eq},
     intros h n,
     have hn := h n,
-    rw segment.touches at *,
     split,
     {-- need to prove: seq (add x y) n≤seq (add x z) n
         simp [seq, add, segment.le, segment.fst, segment.snd, segment.add],
@@ -492,7 +484,7 @@ def sub (x y : ℛ) : ℛ := add x (neg y)
 
 theorem sub_self_eq_zero (x : ℛ) : sub x x =' 0 :=
 begin
-    rwa [zero, eq, inclusion_const],
+    rwa [zero, inclusion_const],
     intro n,
     simp [sub, add, neg, seq, segment.add, segment.neg, segment.fst, segment.snd, segment.touches, segment.inclusion],
     split,
@@ -518,10 +510,8 @@ end
 -- In traditional notation: (x + y) - y = x
 theorem sub_add (x y : ℛ) : sub (add x y) y =' x :=
 begin
-    rw sub,
     transitivity add x (add y (neg y)),
     exact add_assoc,
-    rw ← sub,
     transitivity add x 0,
     {-- need to prove: add x (sub y y) =' add x 0
         exact eq_implies_add_eq_add (sub_self_eq_zero y),
@@ -529,20 +519,6 @@ begin
     exact add_zero,
 end
 
-theorem sub_add_comm {x y z : ℛ} : sub (add x y) z =' add x (sub y z) :=
-begin
-    rw sub,
-    rw sub,
-    exact add_assoc,
-end
+theorem sub_add_comm {x y z : ℛ} : sub (add x y) z =' add x (sub y z) := add_assoc
 
 end real_seq
-
-
-/-
-TODO:
-Create other files for:
-5) Intermediate Value Theorem and its constructive counterparts
-6) Completeness of (ℛ, ≤)
-7) Every real function is continuous (Needs Fan Theorem)
--/

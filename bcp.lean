@@ -1,6 +1,6 @@
 import ..Intuitionism.nat_seq
-import data.nat.basic
 import ..Intuitionism.reckless
+import data.nat.basic
 
 /--
 Brouwer's Continuity Principle
@@ -9,14 +9,14 @@ for all infinite sequences α ∈ 𝒩 there is an n ∈ ℕ such that (α R n),
 then the relation should be decidable based on an initial part of α
 -/
 def BCP : Prop := ∀ R : 𝒩 → ℕ → Prop,
-    (∀ a : 𝒩, ∃ n : ℕ, R a n) → (∀ a : 𝒩, ∃ m n: ℕ, ∀ b : 𝒩, (∀ i : ℕ, i < m → a i = b i) → R b n)
+    (∀ a : 𝒩, ∃ n : ℕ, R a n) → ∀ a : 𝒩, ∃ m n : ℕ, ∀ b : 𝒩, (∀ i : ℕ, i < m → a i = b i) → R b n
 
 /--
 If a sequence of naturals α and a natural number n are given,
 we can always create another sequence that starts out the same,
 but differs at n
 -/
-lemma exists_start_eq_ne (a : 𝒩) (n : ℕ): ∃ b : 𝒩, (∀ i : ℕ, i < n → a i = b i) ∧ a n ≠ b n :=
+lemma exists_start_eq_ne (a : 𝒩) (n : ℕ) : ∃ b : 𝒩, (∀ i : ℕ, i < n → a i = b i) ∧ a n ≠ b n :=
 begin
     set b : 𝒩 := λ i : ℕ, if i < n then a i else a i + 1 with hb,
     use b,
@@ -45,20 +45,19 @@ An example to demonstrate the power of BCP
 A function f from 𝒩 to ℕ can never be injective
 This can be seen as the other side of the coin to nat_seq.uncountable
 That theorem showed a function ℕ → 𝒩 can never be surjective, while this one shows
-that a function ℕ → 𝒩 can never be injective
+that a function 𝒩 → ℕ can never be injective
 -/
-theorem strongly_not_injective (bcp : BCP) (f : 𝒩 → ℕ) : ∀ a : 𝒩, ∃ b : 𝒩, a # b ∧ f(a) = f(b) :=
+theorem strongly_not_injective (f : 𝒩 → ℕ) : BCP → ∀ a : 𝒩, ∃ b : 𝒩, a # b ∧ f a = f b :=
 begin
-    intro a,
+    intros bcp a,
     set R : 𝒩 → ℕ → Prop :=  λ (a : 𝒩) (n : ℕ), f a = n with hr,
     have g₁ : ∀ a : 𝒩, ∃ n : ℕ, R a n,
-    {-- proof of g₁
+    {-- proof of ∀ a : 𝒩, ∃ n : ℕ, R a n
         intro a,
         use f a,
         rw hr,
     },
-    have bcpr := bcp R g₁, -- we use BCP here
-    have bcpa := bcpr a,
+    have bcpa := (bcp R g₁) a, -- we use BCP here
     cases bcpa with m bcpa_m,
     cases bcpa_m with n bcpcon,
     cases exists_start_eq_ne a m with b hb,
@@ -66,7 +65,7 @@ begin
     split,
     {-- need to prove: a # b
         use m,
-        exact and.elim_right hb,
+        exact hb.elim_right,
     },
     {-- need to prove: f a = f b
         have g₂ : R a n,
@@ -75,29 +74,27 @@ begin
             intros i hi,
             refl,
         },
-        rw hr at g₂,
-        rw g₂,
         have g₃ : R b n,
         {-- proof of g₃
             apply bcpcon b,
             intros i hi,
-            exact (and.elim_left hb) i hi,
+            exact hb.elim_left i hi,
         },
-        rw hr at g₃,
-        rw g₃,
+        rw hr at g₂ g₃,
+        rwa [g₂, g₃],
     }
 end
 
 /-
 The above theorem perhaps isn't how a classical mathematician would define "not injective"
-This example should remove any doubts that the theorem above shows
+This theorem should remove any doubts that the previous theorem shows
 that the function is not injective
 -/
-example (bcp : BCP) (f : 𝒩 → ℕ) : ¬ (∀ a b : 𝒩, f a = f b → a ='b) :=
+theorem not_injective (f : 𝒩 → ℕ) : BCP → ¬(∀ a b : 𝒩, f a = f b → a =' b) :=
 begin
-    intro h,
+    intros bcp h,
     have h0 := h nat_seq.zero,
-    cases strongly_not_injective bcp f nat_seq.zero with b hb,
+    cases strongly_not_injective f bcp nat_seq.zero with b hb,
     have hb0 := h0 b hb.elim_right,
     exact (nat_seq.ne_of_apart _ _ hb.elim_left) hb0,
 end
@@ -121,7 +118,7 @@ begin
 end
 
 -- A lemma needed at the end of the next theorem
-lemma tail_equal_not_forall_equal_implies_exists_ne (a b: 𝒩) (n : ℕ)
+lemma tail_equal_not_forall_equal_implies_exists_ne (a b : 𝒩) (n : ℕ)
     (h₁ : ∀ i : ℕ, i >= n → a i = b i)
     (h₂ : ¬ ∀ i : ℕ, a i = b i) :
     ∃ i : ℕ, i < n ∧ a i ≠ b i :=
@@ -164,7 +161,7 @@ begin
 end
 
 -- simple lemma needed for next theorem
-lemma ite_cond_eq (a b d: 𝒩) (n : ℕ) (hd : eq d (λ i, ite (i < n) (b i) (a i))): 
+lemma ite_cond_eq (a b d : 𝒩) (n : ℕ) (hd : d =' (λ i, ite (i < n) (b i) (a i))) : 
     ∀ (i : ℕ), i ≥ n → d i = a i :=
 begin
     intros i hi,
@@ -193,20 +190,17 @@ begin
         cases nat_seq.apart_cotrans a b h c with hac hcb,
         {-- case: a # c
             left,
-            intro g,
-            apply nat_seq.ne_of_apart a c hac,
-            exact g,
+            exact nat_seq.ne_of_apart a c hac,
         },
         {-- case: c # b
             right,
-            intro g,
-            apply nat_seq.ne_of_apart c b hcb,
-            exact g,
+            exact nat_seq.ne_of_apart c b hcb,
         }
     },
     {-- need to prove: (∀ c : 𝒩, c ≠ a ∨ c ≠ b) → a # b, BCP is needed here
         intro h,
-        set R : 𝒩 → ℕ → Prop := λ c, λ n, if n = 0 then nat_seq.ne c a else nat_seq.ne c b with hR,
+        set R : 𝒩 → ℕ → Prop := λ c, λ n, if n = 0 then c ≠' a else c ≠' b with hR,
+        have hz : 0 = 0 := rfl,
         have hr : ∀ c : 𝒩, ∃ n : ℕ, R c n, by 
         {-- need to prove: ∀ c : 𝒩, ∃ n : ℕ, R c n
             intro c,
@@ -214,7 +208,6 @@ begin
             {-- case: a ≠ c
                 use 0,
                 rw hR,
-                have hz : 0 = 0 := rfl,
                 split_ifs,
                 rw nat_seq.ne_symm,
                 exact hc₁,
@@ -223,8 +216,7 @@ begin
                 use 1,
             }
         },
-        have bcpr := bcp R hr,
-        have bcpb := bcpr b,
+        have bcpb := (bcp R hr) b,
         cases bcpb with m bcpbm,
         cases bcpbm with n bcpbmn,
         have hb₁ := bcpbmn b,
@@ -263,10 +255,10 @@ begin
         },
         have hd₃ := hd₁ hd₂,
         rw hR at hd₃,
-        have hz : 0 = 0 := rfl,
         split_ifs at hd₃,
         rw nat_seq.ne at hd₃,
         rw nat_seq.eq at hd₃,
+        rw function.funext_iff at hd,
         have h₀ := ite_cond_eq a b d m hd,
         cases tail_equal_not_forall_equal_implies_exists_ne d a m h₀ hd₃ with j hj,
         use j,
@@ -276,21 +268,20 @@ begin
     }
 end
 
-
-theorem BCP_implies_not_LPO : BCP → ¬ reckless.LPO :=
+theorem BCP_implies_not_LPO : BCP → ¬reckless.LPO :=
 begin
-    intros bcp h,
-    rw reckless.LPO at h,
+    intros bcp lpo,
     set R : 𝒩 → ℕ → Prop := λ a, λ i, if i = 0 then ∀ n : ℕ, a n = 0 else ∃ n, a n ≠ 0 with hR,
+    have hz : 0 = 0 := rfl,
     have hr : ∀ a : 𝒩, ∃ n : ℕ, R a n, by
     {
         intro a,
-        cases h a with aeq0 ane0,
+        cases lpo a with aeq0 ane0,
         {-- case: ∀ n : ℕ, a n = 0
             use 0,
             rw hR,
-            split_ifs,
-            repeat {exact aeq0},
+            split_ifs, --We only need to consider the case 0 = 0
+            exact aeq0,
         },
         {-- case: ∃ n : ℕ, a n ≠ 0
             use 1,
@@ -298,23 +289,19 @@ begin
             split_ifs,
             {-- case: 1 = 0, impossible
                 exfalso,
-                have h_2 : ¬ (1 = 0), by simp,
-                exact h_2 h_1,
+                exact nat.one_ne_zero h,
             },
-            {-- need to prove: ∃ n : ℕ, a n ≠ 0
+            {-- case: ¬1 = 0, need to prove: ∃ n : ℕ, a n ≠ 0
                 exact ane0,
             }
         }
     },
-    have bcp_r := bcp R hr,
-    have bcp_r_0 := bcp_r nat_seq.zero,
+    have bcp_r_0 := (bcp R hr) nat_seq.zero,
     cases bcp_r_0 with m bcp_r_0₁,
     cases bcp_r_0₁ with n bcp_r_0₂,
     cases nat.eq_zero_or_pos n with hn₁ hn₂,
     {-- case: n = 0
-        rw hn₁ at bcp_r_0₂,
         set b : 𝒩 := λ k, if k < m then 0 else 1 with hb,
-        have bcp_b := bcp_r_0₂ b,
         have bstart0 : (∀ (i : ℕ), i < m → nat_seq.zero i = b i), by
         {
             intros i hi,
@@ -322,44 +309,102 @@ begin
             split_ifs,
             refl,
         },
-        have bcp_b₁ := bcp_b bstart0,
-        rw hR at bcp_b₁,
-        split_ifs at bcp_b₁,
+        have bcp_b := (bcp_r_0₂ b) bstart0,
+        rwa [hR, hn₁] at bcp_b,
+        split_ifs at bcp_b,
         {-- case: 0 = 0, need to prove: ∀ n : ℕ, b n = 0 leads to a contradiction
-            
-            have hm := bcp_b₁ m,
+            have hm := bcp_b m,
             simp [hb] at hm,
             split_ifs at hm,
             {-- case: m < m, impossible
-                have hm₂ := ne_of_gt h_2,
-                apply hm₂,
-                refl,
+                revert h,
+                exact irrefl m,
             },
             {-- case: ¬ m < m, need to prove: false, we use hm (1 = 0)
-                apply nat.one_ne_zero,
-                exact hm,
+                exact nat.one_ne_zero hm,
             }
         },
-        {-- case: ¬ 0 = 0, impossible
-            apply h_1,
-            refl,
-        }
     },
     {-- case: n > 0
         have h₀ := bcp_r_0₂ nat_seq.zero,
-        have h₁ : (∀ (i : ℕ), i < m → nat_seq.zero i = nat_seq.zero i), by simp,
+        have h₁ : (∀ i : ℕ, i < m → nat_seq.zero i = nat_seq.zero i), by simp,
         have h₂ := h₀ h₁,
         rw hR at h₂,
         split_ifs at h₂,
         {-- case: n = 0, impossible since we assumed n > 0
-            have hn₃ := or.intro_right (n < 0) hn₂,
-            rw ← ne_iff_lt_or_gt at hn₃,
-            exact hn₃ h_1,
+            exact (ne_of_gt hn₂) h,
         },
         {-- have: ∃ n, nat_seq.zero n ≠ 0, this is a contradiction with the definition of nat_seq.zero
             cases h₂ with k hk,
             apply hk,
-            simp [nat_seq.zero],
-        }   
+            refl,
+        }
+    }
+end
+
+-- In essence, this is the same proof as the proof of BCP_implies_not_LPO, 
+-- which becomes unnecessary since we have proven LPO → WLPO
+theorem BCP_implies_not_WLPO : BCP → ¬reckless.WLPO :=
+begin
+    intros bcp wlpo,
+    set R : 𝒩 → ℕ → Prop := λ a, λ i, if i = 0 then ∀ n : ℕ, a n = 0 else ¬∀ n : ℕ, a n = 0 with hR,
+    have hz : 0 = 0 := rfl,
+    have hr : ∀ a : 𝒩, ∃ n : ℕ, R a n, by
+    {
+        intro a,
+        cases wlpo a with aeq0 naeq0,
+        {-- case: ∀ n : ℕ, a n = 0
+            use 0,
+            rw hR,
+            split_ifs, --We only need to consider the case 0 = 0
+            exact aeq0,
+        },
+        {-- case: ¬∀ n : ℕ, a n = 0
+            use 1,
+        }
+    },
+    have bcp_r_0 := (bcp R hr) nat_seq.zero,
+    cases bcp_r_0 with m bcp_r_0₁,
+    cases bcp_r_0₁ with n bcp_r_0₂,
+    cases nat.eq_zero_or_pos n with hn₁ hn₂,
+    {-- case: n = 0
+        set b : 𝒩 := λ k, if k < m then 0 else 1 with hb,
+        have bstart0 : (∀ (i : ℕ), i < m → nat_seq.zero i = b i), by
+        {
+            intros i hi,
+            simp [nat_seq.zero, hb],
+            split_ifs,
+            refl,
+        },
+        have bcp_b := (bcp_r_0₂ b) bstart0,
+        rwa [hR, hn₁] at bcp_b,
+        split_ifs at bcp_b,
+        {-- case: 0 = 0, need to prove: ∀ n : ℕ, b n = 0 leads to a contradiction
+            have hm := bcp_b m,
+            simp [hb] at hm,
+            split_ifs at hm,
+            {-- case: m < m, impossible
+                revert h,
+                exact irrefl m,
+            },
+            {-- case: ¬ m < m, need to prove: false, we use hm (1 = 0)
+                exact nat.one_ne_zero hm,
+            }
+        },
+    },
+    {-- case: n > 0
+        have h₀ := bcp_r_0₂ nat_seq.zero,
+        have h₁ : (∀ i : ℕ, i < m → nat_seq.zero i = nat_seq.zero i), by simp,
+        have h₂ := h₀ h₁,
+        rw hR at h₂,
+        split_ifs at h₂,
+        {-- case: n = 0, impossible since we assumed n > 0
+            exact (ne_of_gt hn₂) h,
+        },
+        {-- have: ¬∀ n : ℕ, nat_seq.zero n = 0, this is a contradiction with the definition of nat_seq.zero
+            apply h₂,
+            intro i,
+            refl,
+        }
     }
 end

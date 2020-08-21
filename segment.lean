@@ -49,7 +49,29 @@ def inclusion (q : ℚ) : 𝕊 :=
 
 @[instance] def has_zero : has_zero 𝕊 := { zero := inclusion 0 }
 
-@[trans] theorem contained_trans (s t v: 𝕊) (h₁ : s ⊑ t) (h₂ : t ⊑ v) : s ⊑ v :=
+def two_sided_inclusion (q : ℚ) (hq : q > 0) : 𝕊 :=
+    subtype.mk (-q, q)
+    begin
+        simp,
+        rwa [neg_le_iff_add_nonneg, ← two_mul],
+        apply rat.mul_nonneg,
+        {-- need to prove: 0 ≤ 2
+            exact rat.le_def'.mpr trivial
+        },
+        {-- need to prove: 0 ≤ q
+            apply le_of_lt,
+            rw ← gt_from_lt,
+            exact hq,
+        }
+    end
+
+lemma two_sided_inclusion_contained {q₁ q₂ : ℚ} {hq₁ : q₁ > 0} {hq₂ : q₂ > 0} (h : q₁ ≤ q₂) :
+    two_sided_inclusion q₁ hq₁ ⊑ two_sided_inclusion q₂ hq₂ :=
+begin
+    simp [two_sided_inclusion, contained, fst, snd, h],
+end
+
+@[trans] theorem contained_trans (s t v : 𝕊) (h₁ : s ⊑ t) (h₂ : t ⊑ v) : s ⊑ v :=
 begin
     split,
     {-- need to prove: fst v ≤ fst s
@@ -136,7 +158,7 @@ end
 /--
 We say that two rational segments 'touch' if they partially cover eachother
 -/
-def touches (s t: 𝕊) : Prop := s ≤ t ∧ t ≤ s
+def touches (s t : 𝕊) : Prop := s ≤ t ∧ t ≤ s
 
 infix `≈` := touches
 
@@ -149,8 +171,6 @@ end
 
 @[symm] theorem touches_symm (s t : 𝕊) : s ≈ t ↔ t ≈ s :=
 begin
-    repeat {rw touches},
-    repeat {rw le},
     exact and.comm,
 end
 
@@ -187,10 +207,8 @@ lemma snd_add_comm {s t : 𝕊} : snd (add s t) = snd s + snd t := rfl
 
 theorem add_comm (s t : 𝕊) : add s t = add t s :=
 begin
-    rw add,
-    rw add,
     apply subtype.eq,
-    simp,
+    simp [add],
     split,
         exact rat.add_comm (fst s) (fst t),
         exact rat.add_comm (snd s) (snd t),
@@ -199,7 +217,6 @@ end
 -- We use this lemma in proving that addition on ℛ is well-defined
 lemma contained_bounds_le (s t : 𝕊) (h : s ⊑ t) : s.snd - s.fst ≤ t.snd - t.fst :=
 begin
-    rw contained at h,
     apply sub_le_sub,
     exact h.elim_right,
     exact h.elim_left,

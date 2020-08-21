@@ -8,63 +8,40 @@ This file captures the notions:
 
 -- Decide: Use def / structure / class
 
+import ..Intuitionism.bcp
 import ..Intuitionism.fin_seq
 
 open fin_seq
 
-variables {β σ : fin_seq → ℕ}
-
-def is_spread_law (σ : fin_seq → ℕ) : Prop := 
+def is_spread_law (σ : fin_seq → ℕ) : Prop :=
     σ empty_seq = 0 ∧
     (∀ s : fin_seq, σ s = 0 ↔ ∃ n : ℕ, σ (extend s (singleton n)) = 0)
-
-
---TODO: Take another look at this
-structure spread := mk :: 
-    (σ : fin_seq → ℕ)
-    (spread_law : is_spread_law σ)
-    (spread := {a : 𝒩 // ∀ n : ℕ, σ (finitize a n) = 0})
 
 def is_fan_law (β : fin_seq → ℕ) : Prop :=
     is_spread_law β ∧
     (∀ s : fin_seq, (β s = 0 → ∃ n : ℕ, ∀ m : ℕ, β (extend s (singleton m)) = 0 → m ≤ n))
 
---TODO: Take another look at this
-structure fan := mk ::
-    (β : fin_seq → ℕ)
-    (fan_law : is_fan_law β)
-    (fan := {a : 𝒩 // ∀ n : ℕ, β (finitize a n) = 0})
+lemma fan_law_is_spread_law (β : fin_seq → ℕ) (hβ : is_fan_law β) : is_spread_law β := and.elim_left hβ
 
-/-
--- This does not work, error: type expected at (F.fan) term has type ({a // ∀ (n : ℕ), F.β (finitize a n) = 0})
-def is_bar (B : set fin_seq) (F : fan) : Prop := ∀ a : F.fan, ∃ n : ℕ, finitize (subtype.val a) n ∈ B
--/
+def spread (σ : fin_seq → ℕ) (hσ : is_spread_law σ) : Type := {a : 𝒩 // ∀ n : ℕ, σ (finitize a n) = 0}
 
-variables {hβ : is_fan_law β}
+def fan (β : fin_seq → ℕ) (hβ : is_fan_law β) : Type := {a : 𝒩 // ∀ n : ℕ, β (finitize a n) = 0}
 
-def fan' (β : fin_seq → ℕ) (h : is_fan_law β) := {a : 𝒩 // ∀ n : ℕ, β (finitize a n) = 0}
+lemma fan_is_spread (β : fin_seq → ℕ) (hβ : is_fan_law β) : fan β hβ = spread β (fan_law_is_spread_law β hβ) :=
+begin
+    rw fan,
+    rw spread,
+end
 
-#print fan'
+def is_bar (β : fin_seq → ℕ) (hβ : is_fan_law β) (B : set fin_seq) : Prop :=
+    ∀ a : fan β hβ, ∃ n : ℕ, finitize a.val n ∈ B
 
-def is_bar' (B : set fin_seq) : Prop :=
-    ∀ a : fan' β hβ, ∃ n : ℕ, finitize a.val n ∈ B
+def fan_theorem (β : fin_seq → ℕ) (hβ : is_fan_law β) (B : set fin_seq) (hB : is_bar β hβ B) : Prop :=
+    ∃ m : ℕ, ∀ a : fan β hβ, ∃ n : ℕ, n ≤ m ∧ finitize a.val n ∈ B
 
-#reduce is_bar'
-
-#print is_bar'
-
-def is_bar'' (B : set fin_seq) (F : Type) (hF : F = fan' β hβ) :=
-    ∀ a : F, ∃ n : ℕ, finitize (eq.mp hF a).val n ∈ B
-
-#print is_bar''
-
---∀ a : F, ∃ n : ℕ, finitize a.val n ∈ B
-
-
-axiom fan_theorem (B : set fin_seq) (hB : @is_bar' β hβ B) :
-    ∃ m : ℕ, ∀ a : fan' β hβ, ∃ n : ℕ, n ≤ m ∧ finitize a.val n ∈ B
-
---Error: a is not a subtype anymore
---def is_bar (B : set fin_seq) (F : fan) : Prop := ∀ a : F.fan, ∃ n : ℕ, finitize a.val n ∈ B
-
--- Can you do something like: fan extends spread?
+-- Hard to use
+def principle_of_bar_induction (β : fin_seq → ℕ) (hβ : is_fan_law β) (B : set fin_seq) (hB : is_bar β hβ B) 
+    (C : set fin_seq) (hC₁ : C ⊆ B)
+    (hC₂ : ∀ s : fin_seq, (β s = 0 ∧ s ∈ C) → ∀ n : ℕ, β (extend s (singleton n)) = 0 → (extend s (singleton n)) ∈ C)
+    (hC₃ : ∀ s : fin_seq, β s = 0 → (∀ n : ℕ, β (extend s (singleton n)) = 0 → (extend s (singleton n)) ∈ C) → s ∈ C)
+    : Prop := empty_seq ∈ C
